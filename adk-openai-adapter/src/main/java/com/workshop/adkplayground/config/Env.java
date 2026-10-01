@@ -1,4 +1,4 @@
-package com.workshop.adkplayground;
+package com.workshop.adkplayground.config;
 
 import io.github.cdimascio.dotenv.Dotenv;
 

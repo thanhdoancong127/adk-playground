@@ -5,35 +5,77 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.workshop.adkplayground</groupId>
-  <artifactId>adk-playground</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <artifactId>adk-playground-parent</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>adk-playground</name>
+
+  <modules>
+    <module>adk-openai-adapter</module>
+    <module>playground-domain</module>
+    <module>playground-agents</module>
+    <module>playground-cli</module>
+  </modules>
 
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <adk.version>1.10.1</adk.version>
+    <dotenv.version>3.0.2</dotenv.version>
     <exec.plugin.version>3.1.0</exec.plugin.version>
+    <shade.plugin.version>3.6.0</shade.plugin.version>
+    <enforcer.plugin.version>3.5.0</enforcer.plugin.version>
   </properties>
 
-  <dependencies>
-    <dependency>
-      <groupId>com.google.adk</groupId>
-      <artifactId>google-adk</artifactId>
-      <version>1.10.1</version>
-    </dependency>
-    <dependency>
-      <groupId>io.github.cdimascio</groupId>
-      <artifactId>dotenv-java</artifactId>
-      <version>3.0.2</version>
-    </dependency>
-  </dependencies>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.google.adk</groupId>
+        <artifactId>google-adk</artifactId>
+        <version>${adk.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.cdimascio</groupId>
+        <artifactId>dotenv-java</artifactId>
+        <version>${dotenv.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.workshop.adkplayground</groupId>
+        <artifactId>adk-openai-adapter</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.workshop.adkplayground</groupId>
+        <artifactId>playground-domain</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.workshop.adkplayground</groupId>
+        <artifactId>playground-agents</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <build>
-    <plugins>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>${exec.plugin.version}</version>
-      </plugin>
-    </plugins>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>${enforcer.plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>${exec.plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-shade-plugin</artifactId>
+          <version>${shade.plugin.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
   </build>
 </project>

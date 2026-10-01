@@ -1,0 +1,12 @@
+# Build context exclusions — keep secrets and build artifacts out of the image.
+.git
+.gitignore
+target/
+.env
+.env.*
+!.env.example
+docs/
+README.md
+*.md
+eval-out/
+hyperframes/

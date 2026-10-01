@@ -27,6 +27,20 @@ It runs a real agent against any OpenAI-compatible endpoint through a hand-writt
 
 ## Architecture
 
+The project is a **modular monolith**, one executable built from four Maven
+modules split by dependency boundary (see [`docs/adr/0001-module-structure.md`](docs/adr/0001-module-structure.md)).
+Layering is enforced by the build (`maven-enforcer-plugin`), not by convention.
+
+```
+adk-playground-parent
+├── adk-openai-adapter   BaseLlm -> OpenAI-compatible endpoint (ADK + HTTP/JSON only)
+├── playground-domain    catalog/cart/order rules + in-memory fakes (no ADK, no internal deps)
+├── playground-agents    agent factories, tools, routing, guardrails (adapter banned; model injected)
+└── playground-cli       config, credentials, CLI, composition root, shaded jar (the one executable)
+```
+
+Dependency graph: `cli -> agents -> domain` and `cli -> adapter`. Nothing else.
+
 The agent layer stays thin; the LLM boundary is swappable and the "services"
 are in-memory fakes — no HTTP between services, ever.
 
@@ -110,8 +124,8 @@ export PATH="$HOME/.local/opt/apache-maven-3.9.9/bin:$JAVA_HOME/bin:$PATH"
 cp .env.example .env         # then edit OPENCODE_API_KEY
 
 # 3. run a single prompt
-mvn -q compile exec:java -Dexec.mainClass=com.workshop.adkplayground.DemoRunner \
-  -Dexec.args="What is Google ADK? One sentence."
+mvn -q -B package -DskipTests
+java -jar playground-cli/target/playground-cli-*.jar "What is Google ADK? One sentence."
 ```
 
 ## Layout

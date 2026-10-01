@@ -1,0 +1,34 @@
+# docker-compose.yml — CLI-only playground.
+#
+# Default: `docker compose run --rm app [prompt]`  -> uses the endpoint in .env.
+# Local demo: `docker compose --profile local run --rm app` -> talks to Ollama.
+#
+# This is NOT a long-running service: no ports, no restart, no persistence.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: adk-playground:local
+    # .env is read on the host at runtime; never baked into the image.
+    env_file:
+      - .env
+    environment:
+      # When the local profile is on, point the adapter at the compose Ollama service.
+      # (host.docker.internal also works if Ollama runs natively on the host.)
+      OPENCODE_BASE_URL: ${OPENCODE_BASE_URL:-http://ollama:11434/v1}
+    volumes:
+      # Live-eval results land here (host ./eval-out), writable by UID 10001.
+      - ./eval-out:/app/eval-out
+
+  # Offline demo only, opt-in via `--profile local`. Not required by the app.
+  ollama:
+    image: ollama/ollama:0.12.3
+    profiles: ["local"]
+    environment:
+      OLLAMA_CONTEXT_LENGTH: "8192"
+    volumes:
+      - ollama:/root/.ollama
+
+volumes:
+  ollama: {}
