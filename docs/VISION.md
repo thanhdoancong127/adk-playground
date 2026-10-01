@@ -32,5 +32,6 @@ Spring Boot, no Kafka, no Keycloak, no Kubernetes, no database server. The
 - Not a fork or clone of YAS.
 - Not a microservices exercise.
 - Not a frontend project.
-- Not a "feature checklist" agent (no RAG/multi-agent/memory until an observed
-  failure justifies them).
+- Not a "feature checklist" agent. RAG and memory wait for an observed failure; the
+  multi-agent router (M3) is in scope, but each tool/agent must earn its place via an
+  eval, not be added to look complete.

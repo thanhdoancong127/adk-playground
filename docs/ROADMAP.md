@@ -5,23 +5,33 @@ a pass-rate number. If the adapter cannot do M0 reliably, nothing after it works
 
 ## M0 — Harden the LLM adapter
 
-- Prove a full **tool-call round trip** through `OpenCodeLlm`: model emits a
-  function call, ADK runs it, the result returns, the model answers.
-- Set `num_ctx` explicitly for Ollama (its default truncates silently).
-- Pick two models that fit 4 GB (e.g. `qwen3:4b`, `qwen2.5:3b-instruct`, Q4, ~8k ctx).
-- **Done when:** 10 scripted prompts produce the same tool calls on 3/3 runs.
+- Prove a full **tool-call round trip** through `OpenCodeLlm`: map ADK
+  `functionCall`/`functionResponse` parts to OpenAI `tool_calls`/`tool` messages, map
+  `LlmRequest.tools()` to the request `tools`, then: model emits a call, ADK runs it,
+  the result returns, the model answers.
+- Model choice: default is the hosted opencode-go model (`deepseek-v4-flash`). Small
+  local models are the target *study*, not a prerequisite; if using Ollama, set
+  `num_ctx` explicitly (default truncates silently) and pick 4 GB-fit models.
+- **Done when:** 10 scripted prompts produce the *expected* tool name(s)/arguments **and**
+  a correct final answer, and the round trip is repeatable 3/3 runs (repeatability alone
+  is not enough).
 
 ## M1 — Read-only catalog agent + eval scaffold
 
 - Fixture of ~40 products in YAS-like categories with stock levels.
 - One agent, three tools: `searchProducts`, `getProduct`, `checkStock`.
-- Start `evals/*.yaml`: prompt → expected tool calls + answer facts; a runner
-  prints pass rate per model.
+- Evals live in **top-level `evals/*.yaml`** (prompt → expected tool calls + answer
+  facts); a runner prints pass rate per model and writes live results to `eval-out/`
+  (`evals/results/*.jsonl` is the committed/aggregated form). A `playground-evals`
+  **module** is added only behind an `evals` Maven profile once the runner has its own
+  dependencies/CI (ADR-0001).
 - **Rule:** no milestone is done without an eval number.
 
 ## M2 — Cart and session state
 
-- Add `addToCart`, `viewCart`, `removeFromCart` stored in ADK session state.
+- Add `addToCart`, `viewCart`, `removeFromCart`. Cart state lives in **ADK session
+  state** (`playground-cli` session service), not in a domain store (ADK is banned in
+  domain). The domain keeps only pure product/inventory fixtures.
 - A multi-turn REPL.
 - Evals for references like "add two of the second one."
 
@@ -48,4 +58,5 @@ a pass-rate number. If the adapter cannot do M0 reliably, nothing after it works
 
 ## Deferred indefinitely
 
-Web UI, persistence beyond in-memory, streaming, auth, more than one process.
+Web UI, persistence beyond in-memory, streaming, auth, more than one process (the
+only allowed split is the optional M6 MCP server in ADR-0001).

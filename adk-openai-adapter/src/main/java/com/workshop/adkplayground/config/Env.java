@@ -3,8 +3,9 @@ package com.workshop.adkplayground.config;
 import io.github.cdimascio.dotenv.Dotenv;
 
 /**
- * Loads configuration from a local {@code .env} file (via dotenv-java), falling back to real
- * environment variables. Keeps API keys out of the code and out of the repo (.env is gitignored).
+ * Resolves configuration from the process environment first, then a local {@code .env} file
+ * (via dotenv-java), then the caller's default. Keeps API keys out of the code and out of the
+ * repo ({@code .env} is gitignored).
  */
 public final class Env {
 
