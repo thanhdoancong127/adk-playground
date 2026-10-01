@@ -7,7 +7,8 @@
 
 ## Context
 
-The project is CLI-first. The owner wants Spring Boot to serve agents over HTTP with real
+The project is CLI-first. Provider/model ownership is fixed separately in ADR-0005
+(the adapter owns providers; the edge injects a `BaseLlm`). The owner wants Spring Boot to serve agents over HTTP with real
 DI/config/lifecycle wiring. Earlier the README non-goal said "no Spring Boot"; the owner
 overrides that. This ADR records the override and constrains it. (ADR-0001 itself never
 mentioned Spring, and there is no enforcer rule that bans it.)

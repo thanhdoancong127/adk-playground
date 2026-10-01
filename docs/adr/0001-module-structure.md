@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-10-01
 - Amended by: ADR-0002 (adds `web`, `testkit`). Related: ADR-0003 (conversation edge, no
-  orchestrator), ADR-0004 (two-phase side-effects). Per-module bans and the
+  orchestrator), ADR-0004 (two-phase side-effects), ADR-0005 (model/provider ownership). Per-module bans and the
   "split by dependency boundary" rule below stay in force.
 
 ## Context

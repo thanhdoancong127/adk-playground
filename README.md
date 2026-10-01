@@ -153,7 +153,7 @@ playws/
   eval-out/                          # live-eval results (gitignored)
   docs/
     VISION.md  ROADMAP.md  ARCHITECTURE.md  TECHNICAL-NOTES.md  IDEAS.md
-    adr/0001..0004-*.md   specs/m0-tool-call-round-trip.md
+    adr/0001..0005-*.md   specs/m0-tool-call-round-trip.md
 ```
 
 ## Non-goals
