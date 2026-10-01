@@ -1,7 +1,5 @@
 package com.playws.cli;
 
-import com.playws.config.Env;
-
 import com.google.adk.agents.RunConfig;
 import com.google.adk.events.Event;
 import com.google.adk.runner.InMemoryRunner;
@@ -29,8 +27,24 @@ public class DemoRunner {
     events.blockingForEach(
         event -> {
           if (event.finalResponse()) {
-            System.out.println("Agent > " + event.stringifyContent());
+            String content = event.stringifyContent();
+            if (content != null && !content.isBlank()) {
+              System.out.println("Agent > " + content);
+              return;
+            }
+            String err = event.errorMessage().orElse(null);
+            if (err != null && !err.isBlank()) {
+              System.err.println("Agent error > " + err);
+              return;
+            }
           }
+          event.errorMessage()
+              .ifPresent(
+                  err -> {
+                    if (!event.finalResponse()) {
+                      System.err.println("Agent error > " + err);
+                    }
+                  });
         });
   }
 }
