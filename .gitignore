@@ -1,0 +1,17 @@
+# Java / Maven
+target/
+*.class
+
+# Secrets
+.env
+
+# OS/editor
+.DS_Store
+.idea/
+*.iml
+.vscode/
+
+# HyperFrames demo artifacts (kept on the `demo` branch, not built here)
+hyperframes/node_modules/
+hyperframes/renders/
+hyperframes/snapshots/
