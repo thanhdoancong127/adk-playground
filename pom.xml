@@ -11,10 +11,10 @@
   <name>playws</name>
 
   <modules>
-    <module>adk-openai-adapter</module>
-    <module>playground-domain</module>
-    <module>playground-agents</module>
-    <module>playground-cli</module>
+    <module>adapter</module>
+    <module>domain</module>
+    <module>agents</module>
+    <module>cli</module>
   </modules>
 
   <properties>
@@ -41,17 +41,17 @@
       </dependency>
       <dependency>
         <groupId>com.playws</groupId>
-        <artifactId>adk-openai-adapter</artifactId>
+        <artifactId>adapter</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>com.playws</groupId>
-        <artifactId>playground-domain</artifactId>
+        <artifactId>domain</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>com.playws</groupId>
-        <artifactId>playground-agents</artifactId>
+        <artifactId>agents</artifactId>
         <version>${project.version}</version>
       </dependency>
     </dependencies>

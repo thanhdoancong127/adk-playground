@@ -17,14 +17,14 @@ parent POM:
 
 | Module | Contents | Dependency rule |
 |---|---|---|
-| `adk-openai-adapter` | `BaseLlm` adapter to any OpenAI-compatible endpoint, request/response mapping | ADK + dotenv-java; no internal deps (convention, not yet enforced) |
-| `playground-domain` | Catalog/cart/order rules, store interfaces + in-memory fakes. Plain Java. | **Banned: `com.google.adk:*` and all `com.playws:*`** |
-| `playground-agents` | Agent factories, prompts, tools, routing, guardrails, state keys | ADK + domain. **Banned: the adapter** — the model is injected via constructor |
-| `playground-cli` | Composition root + terminal I/O + session service + shaded jar | All of the above — the one executable |
+| `adapter` | `BaseLlm` adapter to any OpenAI-compatible endpoint, request/response mapping | ADK + dotenv-java; no internal deps (convention, not yet enforced) |
+| `domain` | Catalog/cart/order rules, store interfaces + in-memory fakes. Plain Java. | **Banned: `com.google.adk:*` and all `com.playws:*`** |
+| `agents` | Agent factories, prompts, tools, routing, guardrails, state keys | ADK + domain. **Banned: the adapter** — the model is injected via constructor |
+| `cli` | Composition root + terminal I/O + session service + shaded jar | All of the above — the one executable |
 
 Dependency graph: `cli → agents → domain` and `cli → adapter`. Nothing else.
 
-Layering: the `playground-domain` and `playground-agents` boundaries are **enforced
+Layering: the `domain` and `agents` boundaries are **enforced
 by the build** (`maven-enforcer-plugin` `bannedDependencies`); the adapter's
 "no internal deps" rule is convention for now (not yet enforced).
 
@@ -41,15 +41,15 @@ is a new **package** under `agents/`.
 
 ## Deferred
 
-- `playground-evals` — added behind the `evals` Maven profile only when there is a
+- `evals` — added behind the `evals` Maven profile only when there is a
   dedicated eval runner with its own datasets and CI job.
-- `playground-mcp-server` (optional M6) — expose catalog/cart over **MCP** so agents
+- `mcp-server` (optional M6) — expose catalog/cart over **MCP** so agents
   consume them through `McpToolset`. This is the real process split, and the honest
   version of "like YAS".
 
 ## Status
 
-M0 ships the adapter and CLI modules; `playground-domain` and `playground-agents`
+M0 ships the adapter and CLI modules; `domain` and `agents`
 are empty skeletons populated at M1.
 
 ## Consequences

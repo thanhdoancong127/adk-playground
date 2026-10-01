@@ -22,7 +22,7 @@ a pass-rate number. If the adapter cannot do M0 reliably, nothing after it works
 - One agent, three tools: `searchProducts`, `getProduct`, `checkStock`.
 - Evals live in **top-level `evals/*.yaml`** (prompt → expected tool calls + answer
   facts); a runner prints pass rate per model and writes live results to `eval-out/`
-  (`evals/results/*.jsonl` is the committed/aggregated form). A `playground-evals`
+  (`evals/results/*.jsonl` is the committed/aggregated form). A `evals`
   **module** is added only behind an `evals` Maven profile once the runner has its own
   dependencies/CI (ADR-0001).
 - **Rule:** no milestone is done without an eval number.
@@ -30,7 +30,7 @@ a pass-rate number. If the adapter cannot do M0 reliably, nothing after it works
 ## M2 — Cart and session state
 
 - Add `addToCart`, `viewCart`, `removeFromCart`. Cart state lives in **ADK session
-  state** (`playground-cli` session service), not in a domain store (ADK is banned in
+  state** (`cli` session service), not in a domain store (ADK is banned in
   domain). The domain keeps only pure product/inventory fixtures.
 - A multi-turn REPL.
 - Evals for references like "add two of the second one."

@@ -27,11 +27,11 @@ export PATH="$HOME/.local/opt/apache-maven-3.9.9/bin:$JAVA_HOME/bin:$PATH"
 ## Maven / build
 
 - Multi-module reactor: build from the **root** (`mvn -B package` / `-B verify`); the
-  single executable is `playground-cli/target/playground-cli-*.jar` (shaded fat jar).
+  single executable is `cli/target/cli-*.jar` (shaded fat jar).
 - To build/test one module plus its upstream deps, run from the root with `-am`:
-  `mvn -B -pl playground-cli -am package`. Do **not** run `exec:java` at the parent
+  `mvn -B -pl cli -am package`. Do **not** run `exec:java` at the parent
   (the parent has no main class) — run the fat jar instead:
-  `java -jar playground-cli/target/playground-cli-*.jar "<prompt>"`.
+  `java -jar cli/target/cli-*.jar "<prompt>"`.
 - On the first build Maven downloads all deps (a few minutes); later builds are fast.
 - `target/` is gitignored.
 - `SLF4J: No providers were found` is a harmless warning (google-adk logs via SLF4J).
@@ -41,8 +41,8 @@ export PATH="$HOME/.local/opt/apache-maven-3.9.9/bin:$JAVA_HOME/bin:$PATH"
 - The image is a **CLI invocation**, not a service. Build with `docker compose build`;
   run with `docker compose run --rm app "<prompt>"` (uses `.env`).
 - The Dockerfile copies **all module POMs** before the sources (reactor-aware) and then
-  `adk-openai-adapter/src`, `playground-domain/src`, `playground-agents/src`,
-  `playground-cli/src`. Copying only the root `pom.xml` + `src/` no longer works.
+  `adapter/src`, `domain/src`, `agents/src`,
+  `cli/src`. Copying only the root `pom.xml` + `src/` no longer works.
 - Optional offline profile: `docker compose --profile local up -d ollama`, then
   `docker compose exec ollama ollama pull qwen3:4b` (download the model explicitly),
   and set `OPENCODE_MODEL=qwen3:4b` + `OPENCODE_BASE_URL=http://ollama:11434/v1`.
@@ -59,12 +59,12 @@ export PATH="$HOME/.local/opt/apache-maven-3.9.9/bin:$JAVA_HOME/bin:$PATH"
 ## Module boundaries (ADR-0001)
 
 - Boundaries are **enforced by the build**: `maven-enforcer-plugin` `bannedDependencies`.
-  - `playground-domain` bans `com.google.adk:*` and `com.playws:*`.
-  - `playground-agents` bans `com.playws:adk-openai-adapter`
+  - `domain` bans `com.google.adk:*` and `com.playws:*`.
+  - `agents` bans `com.playws:adapter`
     (`searchTransitive=true`) — the model is injected, never imported.
-  - `adk-openai-adapter`'s "no internal deps" rule is **not yet enforced** (convention only).
+  - `adapter`'s "no internal deps" rule is **not yet enforced** (convention only).
 - Verify it still bites after edits: temporarily add `google-adk` to
-  `playground-domain` → `mvn -pl playground-domain validate` must fail.
+  `domain` → `mvn -pl domain validate` must fail.
 - A package becomes a module only if it has its own dependency boundary, a separate
   consumer, or its own lifecycle. Adding an agent/tool/prompt never creates a module.
 

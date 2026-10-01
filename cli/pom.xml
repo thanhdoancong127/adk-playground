@@ -10,18 +10,18 @@
     <version>0.1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>playground-cli</artifactId>
-  <name>playground-cli</name>
+  <artifactId>cli</artifactId>
+  <name>cli</name>
 
   <!-- Composition root: the one executable. -->
   <dependencies>
     <dependency>
       <groupId>com.playws</groupId>
-      <artifactId>adk-openai-adapter</artifactId>
+      <artifactId>adapter</artifactId>
     </dependency>
     <dependency>
       <groupId>com.playws</groupId>
-      <artifactId>playground-agents</artifactId>
+      <artifactId>agents</artifactId>
     </dependency>
     <dependency>
       <groupId>com.google.adk</groupId>

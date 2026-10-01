@@ -20,12 +20,12 @@ It runs a real agent against any OpenAI-compatible endpoint through a hand-writt
 Honest snapshot — two of the four modules are empty skeletons, and the diagrams
 below show the **target** shape, not today's.
 
-- **Exists:** `adk-openai-adapter` (`OpenCodeLlm` + `config/Env`), and a single
-  `DemoAgent`/`DemoRunner` in `playground-cli` that calls the model as plain text.
-- **Empty (planned):** `playground-domain`, `playground-agents` — no code yet.
+- **Exists:** `adapter` (`OpenCodeLlm` + `config/Env`), and a single
+  `DemoAgent`/`DemoRunner` in `cli` that calls the model as plain text.
+- **Empty (planned):** `domain`, `agents` — no code yet.
 - **Not implemented:** tool calling, multi-agent routing, cart/order, evals. The
   adapter sends text and reads text only; `DemoAgent` registers no tools.
-- `DemoAgent` still lives in `playground-cli` (it will move to `playground-agents`
+- `DemoAgent` still lives in `cli` (it will move to `agents`
   and take an injected `BaseLlm` at M1).
 
 ## Status
@@ -49,10 +49,10 @@ the adapter's "no internal deps" rule is convention for now (see ADR-0001).
 
 ```
 playws-parent
-├── adk-openai-adapter   OpenCodeLlm + config/Env -> OpenAI-compatible endpoint (deps: ADK + dotenv-java)
-├── playground-domain    catalog/cart/order rules + in-memory fakes (no ADK, no internal deps)
-├── playground-agents    agent factories, tools, routing, guardrails (adapter banned; model injected)
-└── playground-cli       CLI, session service, composition root, shaded jar (the one executable)
+├── adapter   OpenCodeLlm + config/Env -> OpenAI-compatible endpoint (deps: ADK + dotenv-java)
+├── domain    catalog/cart/order rules + in-memory fakes (no ADK, no internal deps)
+├── agents    agent factories, tools, routing, guardrails (adapter banned; model injected)
+└── cli       CLI, session service, composition root, shaded jar (the one executable)
 ```
 
 Dependency graph: `cli -> agents -> domain` and `cli -> adapter`. Nothing else.
@@ -70,9 +70,9 @@ boundary — see ADR-0001.)
 ```mermaid
 flowchart TB
     subgraph proc["playws (one process)"]
-        CLI["playground-cli<br/>DemoRunner / REPL"]
+        CLI["cli<br/>DemoRunner / REPL"]
 
-        subgraph agents["playground-agents"]
+        subgraph agents["agents"]
             ROOT["Concierge Agent<br/>LlmAgent (root)"]
             CAT["CatalogAgent"]
             CART["CartAgent"]
@@ -81,12 +81,12 @@ flowchart TB
 
         SESS["ADK session state<br/>(cart lives here, M2)"]
 
-        subgraph dom["playground-domain (fakes)"]
+        subgraph dom["domain (fakes)"]
             PROD["Product fixtures"]
             STOCK["Inventory fake"]
         end
 
-        subgraph llmb["adk-openai-adapter"]
+        subgraph llmb["adapter"]
             ADAPT["OpenCodeLlm<br/>BaseLlm adapter"]
         end
     end
@@ -149,7 +149,7 @@ cp .env.example .env         # then edit OPENCODE_API_KEY
 
 # 3. run a single prompt
 mvn -q -B package -DskipTests
-java -jar playground-cli/target/playground-cli-*.jar "What is Google ADK? One sentence."
+java -jar cli/target/cli-*.jar "What is Google ADK? One sentence."
 ```
 
 ## Layout
@@ -159,12 +159,12 @@ playws/
   pom.xml                            # parent (packaging=pom) + dependencyManagement
   Dockerfile  docker-compose.yml     # thin-client image + optional 'local' Ollama profile
   .env.example                       # copy to .env (gitignored)
-  adk-openai-adapter/                # BaseLlm adapter to an OpenAI-compatible endpoint
+  adapter/                # BaseLlm adapter to an OpenAI-compatible endpoint
     src/main/java/com/playws/config/Env.java
     src/main/java/com/playws/llm/openai/OpenCodeLlm.java
-  playground-domain/                 # plain-Java domain (empty at M0; ADK banned)
-  playground-agents/                 # agent factories/tools (empty at M0; adapter banned)
-  playground-cli/                    # the one executable
+  domain/                 # plain-Java domain (empty at M0; ADK banned)
+  agents/                 # agent factories/tools (empty at M0; adapter banned)
+  cli/                    # the one executable
     src/main/java/com/playws/cli/{DemoAgent,DemoRunner}.java
   eval-out/                          # live-eval results (gitignored)
   docs/

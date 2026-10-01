@@ -6,20 +6,20 @@ WORKDIR /src
 
 # Copy every module POM first so the dependency layer is cached between builds.
 COPY pom.xml .
-COPY adk-openai-adapter/pom.xml adk-openai-adapter/pom.xml
-COPY playground-domain/pom.xml playground-domain/pom.xml
-COPY playground-agents/pom.xml playground-agents/pom.xml
-COPY playground-cli/pom.xml playground-cli/pom.xml
+COPY adapter/pom.xml adapter/pom.xml
+COPY domain/pom.xml domain/pom.xml
+COPY agents/pom.xml agents/pom.xml
+COPY cli/pom.xml cli/pom.xml
 RUN --mount=type=cache,target=/root/.m2 mvn -B -q -N dependency:go-offline || true
 
 # .env is never copied: .dockerignore excludes .env, .env.*, target/ and .git/.
-COPY adk-openai-adapter/src adk-openai-adapter/src
-COPY playground-domain/src playground-domain/src
-COPY playground-agents/src playground-agents/src
-COPY playground-cli/src playground-cli/src
+COPY adapter/src adapter/src
+COPY domain/src domain/src
+COPY agents/src agents/src
+COPY cli/src cli/src
 RUN --mount=type=cache,target=/root/.m2 \
     mvn -B -q package -DskipTests && \
-    cp playground-cli/target/playground-cli-*.jar /src/app.jar
+    cp cli/target/cli-*.jar /src/app.jar
 
 # ---------- Stage 2: runtime ----------
 FROM eclipse-temurin:21-jre-alpine AS runtime

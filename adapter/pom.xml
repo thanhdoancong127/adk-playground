@@ -10,8 +10,8 @@
     <version>0.1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>adk-openai-adapter</artifactId>
-  <name>adk-openai-adapter</name>
+  <artifactId>adapter</artifactId>
+  <name>adapter</name>
 
   <!-- Boundary: ADK + HTTP/JSON only. Must not depend on other internal modules. -->
   <dependencies>
