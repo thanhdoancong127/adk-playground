@@ -1,6 +1,9 @@
 # Spec: M0 — Tool-call round trip in the LLM adapter
 
-- Status: Draft (pre-implementation)
+- Status: Implemented — offline suite green (44 tests, `mvn -B verify`); **live smoke blocked on
+  provider quota** (HTTP 429 `GoUsageLimitError`, monthly opencode-go limit, 2026-10-01).
+- Reviewed by Codex and Claude; all findings fixed except deferred items listed under
+  "Known follow-ups".
 - Date: 2026-10-01
 - Milestone: M0 (ROADMAP)
 - Scope: **`adapter` only** (+ its tests). No other module changes in M0.
@@ -201,3 +204,13 @@ agent-level proof is the integrated test in item 3.
 - Jackson mediation once Spring Boot arrives (ADR-0002) — inspect the **web** dependency
   tree, not the adapter's.
 - ID matching when a provider omits `tool_call.id`.
+
+## Known follow-ups (found during implementation / review)
+
+- The CLI prints only `event.finalResponse()`, and an error event has no content, so a provider
+  failure still reaches the terminal as an empty `Agent > ` line. Out of M0 scope (`adapter`
+  only); `DemoRunner` should print `errorMessage` when `content` is empty. M1 at the latest.
+- opencode-go's monthly Go quota (`GoUsageLimitError`) blocks the live smoke; re-run it after the
+  limit resets, and record the result in `docs/TECHNICAL-NOTES.md`.
+- Parts that map to nothing (e.g. an inline-data part) are logged and dropped rather than
+  rendered; images/attachments are not an OpenAI chat-completions `content` string yet.

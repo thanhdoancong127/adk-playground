@@ -100,9 +100,32 @@ first, then `.env`, then the default.
   OpenAI-compatible `/chat/completions` endpoint needs a custom `BaseLlm`
   (`adapter/OpenCodeLlm`).
 - opencode-go requires the `x-opencode-session` header (else `MissingSessionID`).
-- The adapter maps text only today; tool calls are **M0** (see the M0 spec).
+- Tool calls **are implemented (M0)**: `OpenAiWire` maps text + `tool_calls` <-> ADK
+  `FunctionCall`/`FunctionResponse`, keeps provider call ids (synthesizes `call_<uuid>` when the
+  provider sends none), and `OpenCodeLlm` sends `role:"tool"` results back. See
+  `docs/specs/m0-tool-call-round-trip.md`.
+- **A failed turn must set `errorCode`, not just `errorMessage`.** ADK's `BaseLlmFlow` drops a
+  response that has no `content` and no `errorCode`, so a provider error (HTTP 500, auth, quota)
+  ends the turn as a **silent empty turn** — no event, no exception. `OpenAiWire.error(...)` sets
+  `errorCode=OTHER` for this reason; `ProviderFailureTest` guards it.
 - Tool-call compatibility is **not** chat compatibility: a model that answers text may
   still fail to emit valid function calls. Verify explicitly.
+- `stream=true` is not sent (M0 is non-streaming); `connect()` is unsupported.
+
+### Live smoke (manual, never in CI)
+
+```bash
+mvn -pl adapter test -Dgroups=live -Dsurefire.excludedGroups=
+```
+
+- Registers one real `FunctionTool` (`getTime`), reads config via `Env` (so `.env` is honored),
+  and asserts the live provider emits a tool call that is summarized back.
+- Surefire's forked JVM runs with cwd = **repo root** (set in `adapter/pom.xml`); otherwise `Env`
+  finds no `.env` and the provider answers `401 Missing API key`.
+- Result recorded 2026-10-01: **failed — provider quota exhausted**, HTTP 429
+  `GoUsageLimitError` (`limitName: monthly`) from opencode-go. The adapter surfaced it correctly
+  (`HTTP 429: ...`); the test must be re-run once the monthly Go limit resets. All 44 offline
+  tests pass (`mvn -B verify`).
 
 ## Record -> replay (the key dev tool)
 

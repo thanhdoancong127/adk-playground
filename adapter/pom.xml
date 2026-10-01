@@ -23,5 +23,30 @@
       <groupId>io.github.cdimascio</groupId>
       <artifactId>dotenv-java</artifactId>
     </dependency>
+
+    <!-- M0: the whole tool-call suite (unit + integrated round trip) lives here. -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+    </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!-- Run tests from the repo root, not adapter/: Env resolves .env relative to the
+               working directory, so a forked JVM in adapter/ sees no key and the live smoke
+               fails with a misleading 401. -->
+          <workingDirectory>${project.basedir}/..</workingDirectory>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

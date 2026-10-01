@@ -1,0 +1,19 @@
+{
+  "id": "chatcmpl-5",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "tool_calls": [
+          {
+            "type": "function",
+            "function": { "name": "get_time", "arguments": "{\"timezone\":\"Asia/Ho_Chi_Minh\"}" }
+          }
+        ]
+      },
+      "finish_reason": "tool_calls"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "chatcmpl-4",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Checking both cities.",
+        "tool_calls": [
+          {
+            "id": "call_1",
+            "type": "function",
+            "function": { "name": "get_weather", "arguments": "{\"city\":\"Hanoi\"}" }
+          },
+          {
+            "id": "call_2",
+            "type": "function",
+            "function": { "name": "get_weather", "arguments": "{\"city\":\"Tokyo\"}" }
+          }
+        ]
+      },
+      "finish_reason": "tool_calls"
+    }
+  ]
+}
