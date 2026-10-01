@@ -9,7 +9,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: adk-playground:local
+    image: playws:local
     # .env is read on the host at runtime; never baked into the image.
     env_file:
       - .env

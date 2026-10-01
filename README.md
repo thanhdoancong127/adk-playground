@@ -1,4 +1,4 @@
-# adk-playground
+# playws
 
 A small, public playground for practicing **AI agents with Google ADK (Java)**.
 It runs a real agent against any OpenAI-compatible endpoint through a hand-written
@@ -48,7 +48,7 @@ The `domain` and `agents` boundaries are enforced by the build (`maven-enforcer-
 the adapter's "no internal deps" rule is convention for now (see ADR-0001).
 
 ```
-adk-playground-parent
+playws-parent
 ├── adk-openai-adapter   OpenCodeLlm + config/Env -> OpenAI-compatible endpoint (deps: ADK + dotenv-java)
 ├── playground-domain    catalog/cart/order rules + in-memory fakes (no ADK, no internal deps)
 ├── playground-agents    agent factories, tools, routing, guardrails (adapter banned; model injected)
@@ -69,7 +69,7 @@ boundary — see ADR-0001.)
 
 ```mermaid
 flowchart TB
-    subgraph proc["adk-playground (one process)"]
+    subgraph proc["playws (one process)"]
         CLI["playground-cli<br/>DemoRunner / REPL"]
 
         subgraph agents["playground-agents"]
@@ -155,17 +155,17 @@ java -jar playground-cli/target/playground-cli-*.jar "What is Google ADK? One se
 ## Layout
 
 ```
-adk-playground/
+playws/
   pom.xml                            # parent (packaging=pom) + dependencyManagement
   Dockerfile  docker-compose.yml     # thin-client image + optional 'local' Ollama profile
   .env.example                       # copy to .env (gitignored)
   adk-openai-adapter/                # BaseLlm adapter to an OpenAI-compatible endpoint
-    src/main/java/com/workshop/adkplayground/config/Env.java
-    src/main/java/com/workshop/adkplayground/llm/openai/OpenCodeLlm.java
+    src/main/java/com/playws/config/Env.java
+    src/main/java/com/playws/llm/openai/OpenCodeLlm.java
   playground-domain/                 # plain-Java domain (empty at M0; ADK banned)
   playground-agents/                 # agent factories/tools (empty at M0; adapter banned)
   playground-cli/                    # the one executable
-    src/main/java/com/workshop/adkplayground/cli/{DemoAgent,DemoRunner}.java
+    src/main/java/com/playws/cli/{DemoAgent,DemoRunner}.java
   eval-out/                          # live-eval results (gitignored)
   docs/
     VISION.md  ROADMAP.md  ARCHITECTURE.md  TECHNICAL-NOTES.md  IDEAS.md

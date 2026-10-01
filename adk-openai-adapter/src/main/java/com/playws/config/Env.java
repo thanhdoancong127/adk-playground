@@ -1,4 +1,4 @@
-package com.workshop.adkplayground.config;
+package com.playws.config;
 
 import io.github.cdimascio.dotenv.Dotenv;
 

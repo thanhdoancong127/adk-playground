@@ -1,7 +1,7 @@
-package com.workshop.adkplayground.cli;
+package com.playws.cli;
 
-import com.workshop.adkplayground.config.Env;
-import com.workshop.adkplayground.llm.openai.OpenCodeLlm;
+import com.playws.config.Env;
+import com.playws.llm.openai.OpenCodeLlm;
 
 import com.google.adk.agents.BaseAgent;
 import com.google.adk.agents.LlmAgent;

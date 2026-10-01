@@ -5,7 +5,7 @@
 
 ## Context
 
-`adk-playground` is a CLI agent project (Java 17, `release=17`; toolchain JDK 21; Google ADK). We want "real"
+`playws` is a CLI agent project (Java 17, `release=17`; toolchain JDK 21; Google ADK). We want "real"
 engineering discipline but the system has **one process and no network boundary**.
 A background idea (YAS) is a 25-microservice e-commerce sample; copying its
 service-per-domain layout would add ceremony without adding isolation.
@@ -18,7 +18,7 @@ parent POM:
 | Module | Contents | Dependency rule |
 |---|---|---|
 | `adk-openai-adapter` | `BaseLlm` adapter to any OpenAI-compatible endpoint, request/response mapping | ADK + dotenv-java; no internal deps (convention, not yet enforced) |
-| `playground-domain` | Catalog/cart/order rules, store interfaces + in-memory fakes. Plain Java. | **Banned: `com.google.adk:*` and all `com.workshop.adkplayground:*`** |
+| `playground-domain` | Catalog/cart/order rules, store interfaces + in-memory fakes. Plain Java. | **Banned: `com.google.adk:*` and all `com.playws:*`** |
 | `playground-agents` | Agent factories, prompts, tools, routing, guardrails, state keys | ADK + domain. **Banned: the adapter** — the model is injected via constructor |
 | `playground-cli` | Composition root + terminal I/O + session service + shaded jar | All of the above — the one executable |
 

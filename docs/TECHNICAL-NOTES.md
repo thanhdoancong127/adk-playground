@@ -59,8 +59,8 @@ export PATH="$HOME/.local/opt/apache-maven-3.9.9/bin:$JAVA_HOME/bin:$PATH"
 ## Module boundaries (ADR-0001)
 
 - Boundaries are **enforced by the build**: `maven-enforcer-plugin` `bannedDependencies`.
-  - `playground-domain` bans `com.google.adk:*` and `com.workshop.adkplayground:*`.
-  - `playground-agents` bans `com.workshop.adkplayground:adk-openai-adapter`
+  - `playground-domain` bans `com.google.adk:*` and `com.playws:*`.
+  - `playground-agents` bans `com.playws:adk-openai-adapter`
     (`searchTransitive=true`) — the model is injected, never imported.
   - `adk-openai-adapter`'s "no internal deps" rule is **not yet enforced** (convention only).
 - Verify it still bites after edits: temporarily add `google-adk` to

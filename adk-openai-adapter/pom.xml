@@ -5,8 +5,8 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.workshop.adkplayground</groupId>
-    <artifactId>adk-playground-parent</artifactId>
+    <groupId>com.playws</groupId>
+    <artifactId>playws-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
 
