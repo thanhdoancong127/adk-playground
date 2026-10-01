@@ -2,6 +2,9 @@
 
 - Status: Accepted
 - Date: 2026-10-01
+- Amended by: ADR-0002 (adds `web`, `testkit`). Related: ADR-0003 (conversation edge, no
+  orchestrator), ADR-0004 (two-phase side-effects). Per-module bans and the
+  "split by dependency boundary" rule below stay in force.
 
 ## Context
 
@@ -18,11 +21,12 @@ parent POM:
 | Module | Contents | Dependency rule |
 |---|---|---|
 | `adapter` | `BaseLlm` adapter to any OpenAI-compatible endpoint, request/response mapping | ADK + dotenv-java; no internal deps (convention, not yet enforced) |
-| `domain` | Catalog/cart/order rules, store interfaces + in-memory fakes. Plain Java. | **Banned: `com.google.adk:*` and all `com.playws:*`** |
+| `domain` | Commerce model + **ports** + in-memory fakes. Plain Java. | **Banned: `com.google.adk:*` and all `com.playws:*`** |
 | `agents` | Agent factories, prompts, tools, routing, guardrails, state keys | ADK + domain. **Banned: the adapter** — the model is injected via constructor |
 | `cli` | Composition root + terminal I/O + session service + shaded jar | All of the above — the one executable |
 
-Dependency graph: `cli → agents → domain` and `cli → adapter`. Nothing else.
+Dependency graph: `cli → agents → domain`, `cli → adapter`, `cli → domain`; at M3
+`web → agents, adapter, domain`. Nothing else (amended by ADR-0002: adds `testkit`, `web`).
 
 Layering: the `domain` and `agents` boundaries are **enforced
 by the build** (`maven-enforcer-plugin` `bannedDependencies`); the adapter's
@@ -41,11 +45,11 @@ is a new **package** under `agents/`.
 
 ## Deferred
 
-- `evals` — added behind the `evals` Maven profile only when there is a
-  dedicated eval runner with its own datasets and CI job.
-- `mcp-server` (optional M6) — expose catalog/cart over **MCP** so agents
-  consume them through `McpToolset`. This is the real process split, and the honest
-  version of "like YAS".
+- No `evals` module: the eval runner lives in `testkit` (M1) and live mode is gated by
+  `-Peval` (manually run, never in CI).
+- `mcp-server` (optional M5) — expose commerce ports over **MCP** so agents
+  consume them through `McpToolset`. This is a real process split (the honest way to
+  separate a boundary), not a service-per-domain decomposition.
 
 ## Status
 

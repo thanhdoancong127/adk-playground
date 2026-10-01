@@ -1,74 +1,73 @@
 # Architecture
 
-One process, one executable, four Maven modules, CLI only.
+One process per executable. **Four Maven modules today** (`adapter`, `domain`, `agents`,
+`cli`); `testkit` joins at M1 and `web` at M3, `mcp-server` is optional at M5. Split by
+**dependency boundary** (ADR-0001), never service-per-domain. CLI now; HTTP edge from M3.
 
-Module split is by **dependency boundary** (ADR-0001) — never service-per-domain.
-
-| Module | Role |
-|---|---|
-| `adapter` | `OpenCodeLlm extends BaseLlm` + config `Env`. The only place that knows HTTP/JSON. Deps: ADK + dotenv-java. |
-| `domain` | Plain-Java catalog/cart/order rules + in-memory fakes. **No ADK, no internal deps** (enforced). |
-| `agents` | `LlmAgent`s and factories, prompts, tools, routing, guardrails. **Adapter banned** (enforced) — a `BaseLlm` is injected. |
-| `cli` | Composition root + terminal I/O + session service + shaded jar. The one executable. |
-
-Dependency graph: `cli → agents → domain` and `cli → adapter`. Nothing else.
-
-> **M0 reality:** `domain` and `agents` are empty skeletons.
-> The only agent (`DemoAgent`) currently lives in `cli` and constructs
-> `OpenCodeLlm` directly; it moves to `agents` with an injected `BaseLlm`
-> at M1.
-
-## Layers
-
-1. **CLI / runtime** (`cli`) — `DemoRunner` (one-shot) and later a REPL.
-   Both drive `InMemoryRunner`, which owns the ADK session service.
-2. **Agents** (`agents`, planned) — currently `DemoAgent` in cli; later a
-   root `Concierge` that transfers to sub-agents. A new agent is a **package**, not a module.
-3. **Domain fakes** (`domain`, planned) — in-memory fixtures and fake
-   service code: `Product`, `Inventory`, `Cart`. Plain Java method calls exposed to
-   ADK as tools.
-4. **LLM boundary** (`adapter`) — `OpenCodeLlm` + `Env`. The only place
-   that knows about HTTP, JSON, and the endpoint. The **model id** is a constructor
-   argument; `OPENCODE_MODEL` is read by the caller (`DemoAgent` in cli), not the adapter.
-
-## The LLM boundary
-
-ADK Java ships only `Gemini`, `Claude`, and `ApigeeLlm`. `OpenCodeLlm` bridges any
-**OpenAI-compatible** `/chat/completions` endpoint into ADK:
+## Layers and ownership
 
 ```
-LlmRequest  --(contents + systemInstruction)-->  OpenAI messages  -->  POST /chat/completions
-LlmResponse <--(Content via Part.fromText)-------  choices[0].message.content
+Channels        CLI (now) · HTTP/SSE clients (M3). Web, mobile, chat, voice are clients.
+   │
+Conversation    cli / web  (the two composition roots = the edge)
+Edge            Owns: transport, streaming, userId/session mapping, validation, API key,
+                request id, passing confirmations back and forth.
+                Never: intent, prompts, routing, calling commerce ports.
+   │  Runner.runAsync only
+Agent Runtime   ADK + agents
+(ADK)           Owns: intent, context, session state, routing (sub-agent transfer),
+                the tool loop, callbacks, proposals. Model = an injected BaseLlm
+                (the adapter is a plug, not a layer).
+   │  FunctionTools -> ports
+Commerce Ports  domain
++ Fakes         Owns: truth. Stock, prices, order state machine, idempotency, invariants.
+                Deterministic, no LLM involved.
 ```
 
-Config resolution (`config.Env`): process env first, then `.env` (dotenv-java), then a
-default. `.env` is gitignored; only `.env.example` is committed.
+### These are NOT layers
 
-| Key | Default | Meaning |
-|---|---|---|
-| `OPENCODE_BASE_URL` | `https://opencode.ai/zen/go/v1` | endpoint base |
-| `OPENCODE_API_KEY` | *(none)* | bearer token |
-| `OPENCODE_MODEL` | `deepseek-v4-flash` | model id |
-| `OPENCODE_SESSION` | random UUID | `x-opencode-session` header |
+- **AI Orchestrator.** Intent, context, model choice and routing are already handled by the
+  ADK Runner, the root agent and the injected `BaseLlm`. A second orchestrator is a second
+  engine doing the same job (see ADR-0003).
+- **API Gateway.** It is a filter in the edge or someone else's infrastructure — not a
+  layer we build.
+- **E-Commerce APIs as services.** They are in-process **ports**, not network services;
+  nothing calls them over HTTP.
 
-## Known limitations of the current adapter
+## Modules
 
-- **Text only.** Tool calls are not yet serialized/parsed. Non-text parts
-  (`functionCall`/`functionResponse`) are **silently dropped**, and a `Content` with
-  no text parts is skipped entirely. This is exactly what **M0** fixes.
-- **Non-streaming.** `generateContent(stream=true)` is ignored; one response.
-- **No live connection.** `connect()` throws `UnsupportedOperationException`.
-- **No thinking/tool-call fields.** Only `choices[0].message.content` is read.
+| Module | Kind | Contents | Depends on |
+|---|---|---|---|
+| `adapter` | plain | `OpenCodeLlm`, `config/Env`; `AdapterSettings` (planned, M0) + request/response mapping | ADK, dotenv |
+| `domain` | plain (JDK only) | commerce model + **ports** (introduced per milestone as scenarios require: catalog/stock/price at M1; Order/Cart/Payment at M2; Shipping/Promotion/Customer when an M2+ scenario needs them). `domain.fake` = in-memory impls + fault injection | nothing |
+| `agents` | plain | agent factories, `FunctionTool`s over ports, prompts, routing, guardrails, proposal store | ADK, domain (**not** adapter) |
+| `cli` | plain | CLI composition root; `chat` subcommand (planned, M1). Evals/record run as **tests** (`mvn -Peval`), not from the CLI jar. | adapter, agents, domain |
+| `web` (M3) | **Spring Boot 3.x** — Boot BOM imported **only here** | HTTP/SSE composition root, session lifecycle, edge filter | adapter, agents, domain |
+| `testkit` | plain, **test scope** | `ScriptedLlm`, `RecordingLlm`/`ReplayLlm`, fixtures, conformance + eval runner | ADK, domain (**not** agents — avoids a reactor cycle) |
+| `mcp-server` (M5, optional) | plain + MCP SDK | exposes ports as MCP tools (a real process boundary) | domain |
 
-## Technology choices (and why)
+Rules:
+- **Ports are defined by what the agent needs, not by YAS's service list.** M1 needs only
+  catalog/stock/price; Order/Cart arrive at M2; Payment is an M2 fake; Shipping/Promotion/Customer are added when a scenario needs them.
+  They are **ports**, not modules or services.
+- `Shopping` is the **base agent** (M1). `Support`, `Sales`, `Recommendation` are
+  **packages inside `agents`**, added at M4 only when an eval justifies them.
+- Fakes live in `domain` so both executables share them; `testkit` is consumed at
+  **test scope** only.
+- Both composition roots inject the model into agents; neither depends on the other.
 
-| Choice | Why |
-|---|---|
-| Google ADK (Java) | Target framework to practice; tool calling + sessions + callbacks |
-| Java 17 (`release=17`), Maven, 4 modules | Enforced boundaries; toolchain JDK 21; no Spring, no service-per-domain |
-| `BaseLlm` adapter | ADK Java has no OpenAI/LiteLlm class |
-| dotenv-java | Keep keys out of code and out of the repo |
-| In-memory fakes | Behaviour test: the domain must not grow into e-commerce |
+## Boundaries
+
+**Enforced now** (`maven-enforcer-plugin` `bannedDependencies`):
+- `domain` bans `com.google.adk:*` and all `com.playws:*` — this blocks depending on `web`,
+  not a direct Spring dependency (excluding Spring itself is planned enforcement).
+- `agents` bans `com.playws:adapter` (`searchTransitive=true`) — the model is injected.
+- `adapter`'s "no internal deps" is convention for now.
+
+**Planned** (M1/M3): ArchUnit rules — `domain` imports no ADK, `agents` imports no adapter,
+and **request-handling** edge classes call only `Runner` and `agents` public factories
+(never `agents` internals). Wiring/config classes may construct `adapter` and `domain`
+types. A `web`-only Spring rule (ban Spring AI / LangChain4j elsewhere) is added with `web`.
 
 ## Full diagram
 

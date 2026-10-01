@@ -1,4 +1,4 @@
-# docker-compose.yml — CLI-only playground.
+# docker-compose.yml — CLI-only lab runner.
 #
 # Default: `docker compose run --rm app [prompt]`  -> uses the endpoint in .env.
 # Local demo: `docker compose --profile local run --rm app` -> talks to Ollama.

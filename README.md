@@ -1,130 +1,117 @@
 # playws
 
-A small, public playground for practicing **AI agents with Google ADK (Java)**.
+A working **reference and lab for conversational commerce built on Google ADK (Java)**.
 It runs a real agent against any OpenAI-compatible endpoint through a hand-written
-`BaseLlm` adapter, and grows into a YAS-inspired *e-commerce assistant* — the
-**domain is a background idea, not a goal**.
+`BaseLlm` adapter, and grows **outward from the agent core** — a correct adapter, a tested
+agent, a thin conversation edge, grounded commerce tools, safe actions, then justified
+specialization. It is **not a store**; in-memory fakes are first-class fixtures.
 
-- Built on `com.google.adk:google-adk:1.10.1`, Java 17 (toolchain JDK 21), Maven — one
-  executable from four modules (modular monolith).
-- Adapter (`OpenCodeLlm`) proves the LLM boundary: no Gemini key required.
-- Its real deliverable is a **table of what works on small models and how much
-  guardrails help** — not a shop.
+- Built on `com.google.adk:google-adk:1.10.1`, Java 17 (toolchain JDK 21), Maven — a
+  modular monolith split by **dependency boundary** (ADR-0001).
+- Its deliverable is an **executable, evaluated reference** (deterministic tests + a
+  measured live-model eval), not a shop.
 
 > Background idea: [nashtech-garage/yas](https://github.com/nashtech-garage/yas)
 > (a Java microservices e-commerce sample). We borrow only its **nouns**
-> (Product, Cart, Order, Inventory, Rating), never its infrastructure.
+> (Product, Inventory, Order, Payment, Shipping, Customer, Promotion) — as **ports**, never
+> its infrastructure.
 
 ## Current state (M0)
 
-Honest snapshot — two of the four modules are empty skeletons, and the diagrams
-below show the **target** shape, not today's.
+Honest snapshot — two of the four modules are empty skeletons, and the diagrams below show
+the **target** shape, not today's.
 
-- **Exists:** `adapter` (`OpenCodeLlm` + `config/Env`), and a single
-  `DemoAgent`/`DemoRunner` in `cli` that calls the model as plain text.
+- **Exists:** `adapter` (`OpenCodeLlm` + `config/Env`), and a single `DemoAgent`/
+  `DemoRunner` in `cli` that calls the model as plain text.
 - **Empty (planned):** `domain`, `agents` — no code yet.
-- **Not implemented:** tool calling, multi-agent routing, cart/order, evals. The
-  adapter sends text and reads text only; `DemoAgent` registers no tools.
-- `DemoAgent` still lives in `cli` (it will move to `agents`
-  and take an injected `BaseLlm` at M1).
+- **Not implemented:** tool calling, commerce ports, the edge, eval. The adapter sends and
+  reads text only; `DemoAgent` registers no tools.
+- `DemoAgent` moves to `agents` with an injected `BaseLlm` at M1.
 
 ## Status
 
+Milestones exit on **demonstrated behaviour (evals), not features** — see
+[`docs/ROADMAP.md`](docs/ROADMAP.md).
+
 | Milestone | Goal | State |
 |---|---|---|
-| M0 | Harden the LLM adapter (tool-call round trip) | in progress |
-| M1 | Read-only catalog agent + eval scaffold | planned |
-| M2 | Cart / session state | planned |
-| M3 | Multi-agent routing | planned |
-| M4 | Guardrails + human-in-the-loop | planned |
-| M5 | Optional: RAG reviews / enrichment loop / big-model compare | planned |
-| M6 | Optional: expose catalog/cart via an MCP server (deferred; see ADR-0001) | deferred |
+| M0 | Correct tool-call round trip in the adapter | in progress |
+| M1 | Read-only shopper (ports + fakes + testkit) | planned |
+| M2 | Safe commerce actions (two-phase confirm) | planned |
+| M3 | Conversation edge (HTTP + SSE) | planned |
+| M4 | Evaluated specialization (only if evals justify) | planned |
+| M5 | Reproducible reference (replay + conformance; optional MCP) | planned |
 
 ## Architecture
 
-The project is a **modular monolith**, one executable built from four Maven
-modules split by dependency boundary (see [`docs/adr/0001-module-structure.md`](docs/adr/0001-module-structure.md)).
-The `domain` and `agents` boundaries are enforced by the build (`maven-enforcer-plugin`);
-the adapter's "no internal deps" rule is convention for now (see ADR-0001).
+One process per executable. **Four Maven modules today** (`adapter`, `domain`, `agents`,
+`cli`); `testkit` joins at M1, `web` at M3, `mcp-server` optional at M5. Split by
+dependency boundary (ADR-0001). `domain`/`agents` bans are enforced by the build today;
+ArchUnit edge rules are planned (M1/M3).
 
 ```
 playws-parent
-├── adapter   OpenCodeLlm + config/Env -> OpenAI-compatible endpoint (deps: ADK + dotenv-java)
-├── domain    catalog/cart/order rules + in-memory fakes (no ADK, no internal deps)
+├── adapter   OpenCodeLlm + config/Env -> OpenAI-compatible endpoint (ADK + dotenv)
+├── domain    commerce model + PORTS + in-memory fakes (no ADK, no internal deps)
 ├── agents    agent factories, tools, routing, guardrails (adapter banned; model injected)
-└── cli       CLI, session service, composition root, shaded jar (the one executable)
+├── cli       CLI composition root, shaded jar (the executable now)
+├── web       Spring Boot HTTP/SSE composition root (M3; ADR-0002)
+└── testkit   ScriptedLlm / record-replay / fixtures (test scope only)
 ```
 
-Dependency graph: `cli -> agents -> domain` and `cli -> adapter`. Nothing else.
-Domain and agents boundaries are **enforced by the build** (enforcer `bannedDependencies`);
-the adapter's "no internal deps" rule is convention for now (not yet enforced).
+Dependency graph: `cli → agents → domain`, `cli → adapter, domain`; at M1 `testkit → domain`
+(test scope); at M3 `web → agents, adapter, domain`. `testkit` does not depend on `agents`.
+`mcp-server` (optional, M5) → `domain`.
 
-The agent layer stays thin; the LLM boundary is swappable and the "services"
-are in-memory fakes — **no HTTP between services**. (One documented exception:
-optional M6 may expose catalog/cart over an **MCP server** as a real process
-boundary — see ADR-0001.)
+The agent layer stays thin. **There is no separate "AI Orchestrator":** intent, context,
+model choice and routing belong to ADK (ADR-0003). The layers are:
 
-> The two diagrams below show the **target (M1+)** architecture, not the M0
-> skeleton. See "Current state" above.
+```
+Channels → Conversation Edge (cli/web) → ADK Runtime (agents) → Commerce Ports (domain) → Fakes
+```
 
 ```mermaid
 flowchart TB
-    subgraph proc["playws (one process)"]
-        CLI["cli<br/>DemoRunner / REPL"]
-
-        subgraph agents["agents"]
-            ROOT["Concierge Agent<br/>LlmAgent (root)"]
-            CAT["CatalogAgent"]
-            CART["CartAgent"]
-            ORD["OrderAgent"]
-        end
-
-        SESS["ADK session state<br/>(cart lives here, M2)"]
-
-        subgraph dom["domain (fakes)"]
-            PROD["Product fixtures"]
-            STOCK["Inventory fake"]
-        end
-
-        subgraph llmb["adapter"]
-            ADAPT["OpenCodeLlm<br/>BaseLlm adapter"]
-        end
+    subgraph edge["Conversation Edge"]
+        CH["CLI / HTTP · SSE"]
     end
-
-    subgraph ext["External (plugged in)"]
-        OCGO["opencode-go<br/>OpenAI-compatible"]
+    subgraph rt["ADK Runtime (agents)"]
+        ROOT["root agent (LlmAgent)"]
+        SPEC["support / sales / recommendation<br/>(packages, M4; only if evals justify)"]
+        ROOT -.->|agent transfer| SPEC
     end
-
-    CLI --> ROOT
-    CLI --> SESS
-    ROOT -.->|agent transfer| CAT
-    ROOT -.->|agent transfer| CART
-    ROOT -.->|agent transfer| ORD
-    CAT --> PROD
-    CAT --> STOCK
-    CART --> SESS
-    ORD --> SESS
-    ROOT --> ADAPT
-    ADAPT -->|"chat/completions"| OCGO
+    subgraph dom["Commerce Ports (domain)"]
+        PORTS["Product · Inventory · Order · Payment · Shipping · Customer · Promotion<br/>(target; introduced as scenarios need them)"]
+        FAKES["in-memory fakes + fault injection"]
+    end
+    subgraph llmb["adapter"]
+        ADAPT["OpenCodeLlm (injected BaseLlm)"]
+    end
+    subgraph ext["External"]
+        OCGO["opencode-go (OpenAI-compatible)"]
+    end
+    CH -->|Runner.runAsync| ROOT
+    ROOT --> PORTS --> FAKES
+    ROOT --> ADAPT --> OCGO
 ```
 
-### Request flow (single turn) — target, includes tool calling (M0/M1)
+### Request flow (single turn, with tool calling — target)
 
 > Today's adapter does **not** send `tools` or parse `tool_calls`; this is the M0 goal.
 
 ```mermaid
 sequenceDiagram
-    participant U as CLI
+    participant U as Edge (CLI/HTTP)
     participant R as InMemoryRunner
     participant A as Agent (LlmAgent)
     participant L as OpenCodeLlm
     participant M as "Model endpoint"
-    participant T as Tool (Java method)
+    participant T as Tool (over a port)
 
     U->>R: prompt
     R->>A: runAsync(userMsg)
     A->>L: generateContent(LlmRequest)
-    L->>M: POST /chat/completions
+    L->>M: POST /chat/completions (with tools)
     M-->>L: tool_call + args
     L-->>A: LlmResponse(content)
     A->>T: invoke tool
@@ -134,7 +121,7 @@ sequenceDiagram
     M-->>L: final text
     L-->>A: LlmResponse(content)
     A-->>R: Event(final)
-    R-->>U: print answer
+    R-->>U: answer
 ```
 
 ## Run it
@@ -159,39 +146,34 @@ playws/
   pom.xml                            # parent (packaging=pom) + dependencyManagement
   Dockerfile  docker-compose.yml     # thin-client image + optional 'local' Ollama profile
   .env.example                       # copy to .env (gitignored)
-  adapter/                # BaseLlm adapter to an OpenAI-compatible endpoint
-    src/main/java/com/playws/config/Env.java
-    src/main/java/com/playws/llm/openai/OpenCodeLlm.java
-  domain/                 # plain-Java domain (empty at M0; ADK banned)
-  agents/                 # agent factories/tools (empty at M0; adapter banned)
-  cli/                    # the one executable
-    src/main/java/com/playws/cli/{DemoAgent,DemoRunner}.java
+  adapter/                           # BaseLlm adapter + config/Env
+  domain/                            # commerce ports + in-memory fakes (ADK banned)
+  agents/                            # agents/tools/routing (adapter banned; model injected)
+  cli/                               # CLI composition root (the executable now)
   eval-out/                          # live-eval results (gitignored)
   docs/
     VISION.md  ROADMAP.md  ARCHITECTURE.md  TECHNICAL-NOTES.md  IDEAS.md
-    adr/0001-module-structure.md
+    adr/0001..0004-*.md   specs/m0-tool-call-round-trip.md
 ```
 
 ## Non-goals
 
-Written down on purpose, so this never becomes an unfinished YAS clone:
-
-- No Spring Boot, no microservices, no HTTP between services (the only allowed
-  process split is the optional MCP server in ADR-0001).
+- No microservices, no HTTP between services. Allowed process splits: the HTTP edge
+  (ADR-0002) and an optional MCP server (ADR-0001).
 - No Kafka, Elasticsearch, Keycloak, Kubernetes, or Grafana.
-- No frontend — CLI only.
-- No copying YAS code or schemas.
+- No frontend — CLI + HTTP API; no web UI.
+- No copying YAS code or schemas. Commerce nouns are **ports**, not services.
 - Stay on Java 17 (`release=17`, toolchain JDK 21) + plain Maven. Modules split by
-  **dependency boundary**, never service-per-domain (see ADR-0001); a new agent is a
-  package, not a module.
+  **dependency boundary**, never service-per-domain; a new agent is a **package**.
+- **No "AI Orchestrator"** — ADK owns intent/context/routing (ADR-0003).
 
 ## Design rules
 
-1. **Behaviour test** — a feature is allowed only if it changes how the *agent*
-   behaves (a checkout the agent must confirm passes; a "realistic" checkout fails).
-2. **Fakes, not services** — the domain stays fixtures + ~200 lines of fake code.
-3. **Eval-gated** — no milestone is done without a runnable demo and a pass-rate table.
-4. **Parking lot** — anything deferred goes to `docs/IDEAS.md`.
+1. **Behaviour test** — a feature is allowed only if it changes how the *agent* behaves.
+2. **Fakes, not services** — the domain stays ports + in-memory fakes with fault injection.
+3. **Eval-gated** — no milestone is done without a runnable scenario and a measured result.
+4. **Propose vs commit** — side-effecting tools are two-phase (ADR-0004).
+5. **Parking lot** — anything deferred goes to `docs/IDEAS.md`.
 
 ## License
 

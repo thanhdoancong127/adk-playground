@@ -1,37 +1,40 @@
 # Vision
 
-## Why this exists
+## What this is
 
-Practicing **AI agents with Google ADK (Java)** in a realistic-but-small setting.
-The point is not to ship a product; it is to answer, with evidence:
+`playws` is a **working reference and lab for conversational commerce built on Google
+ADK (Java)**. It grows **outward from the agent core**:
 
-- What actually works when the model is a **small local model (4 GB GPU)**?
-- How much do **tool calling, routing, and guardrails** improve outcomes?
-- Where does a small model fall apart, and what is the cheapest fix?
+1. a correct LLM adapter,
+2. a tested agent core that uses tools reliably,
+3. a thin conversation edge (CLI, then HTTP),
+4. grounded commerce tools (ports + deterministic fakes),
+5. safe, state-changing workflows, and
+6. justified agent specialization.
 
-The output of this repo is a **results table**, not a shop.
+It is **not a store** and never becomes one: the in-memory fakes are **first-class
+fixtures**, not placeholders. They make behaviour reproducible, failures observable, and
+experiments cheap.
+
+## What "done" means
+
+The finished deliverable is an **executable, evaluated reference** that shows how these
+boundaries cooperate: a reproducible scenario suite (deterministic tests + a measured
+live-model eval) and explicit architectural boundaries. Real commerce APIs and extra
+channels can replace adapters later **without being prerequisites for completion**.
 
 ## The background idea
 
-The domain is borrowed from [YAS](https://github.com/nashtech-garage/yas), a
-Java microservices e-commerce sample. We take its **nouns** — Product, Cart,
-Order, Inventory, Rating — and **none** of its infrastructure. There is no
-Spring Boot, no Kafka, no Keycloak, no Kubernetes, no database server. The
-"services" are in-memory fakes behind plain Java method calls.
-
-## What success looks like
-
-1. A working agent that can search a product catalog, manage a cart, and place
-   an order **through tools**, on an OpenAI-compatible endpoint.
-2. An `evals/` suite with a pass-rate table per model and per milestone.
-3. A short writeup: what worked, what needed guardrails, what failed on small
-   models.
+The commerce **nouns** are borrowed from [YAS](https://github.com/nashtech-garage/yas)
+(a 25-microservice e-commerce sample): Product, Inventory, Order, Payment, Shipping,
+Customer, Promotion. We take the **nouns**, never the infrastructure — those nouns become
+**ports** with deterministic in-memory implementations, not services.
 
 ## What this is NOT
 
 - Not a fork or clone of YAS.
-- Not a microservices exercise.
-- Not a frontend project.
-- Not a "feature checklist" agent. RAG and memory wait for an observed failure; the
-  multi-agent router (M3) is in scope, but each tool/agent must earn its place via an
+- Not a microservices exercise; no HTTP between "services". The only process boundaries
+  are the conversation edge (CLI + HTTP) and an optional MCP server.
+- Not a frontend project — no web UI (an HTTP API is allowed, a UI is not).
+- Not a "feature checklist". Specialists, RAG and memory must earn their place through an
   eval, not be added to look complete.
