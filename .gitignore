@@ -15,3 +15,6 @@ target/
 hyperframes/node_modules/
 hyperframes/renders/
 hyperframes/snapshots/
+
+# HyperFrames demo is kept out of the repo (local only)
+/hyperframes/
